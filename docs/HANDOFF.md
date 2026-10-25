@@ -9,19 +9,38 @@ for context on decisions; this file is what to do next.
 |---|---|
 | Compiles | Yes — `./gradlew assembleDebug` is green |
 | APK | 16.72 MB, debug-signed, installable |
-| Run on a device or emulator | **No. Never once.** |
-| Tested against real Home Assistant | **No** |
-| Protocol verified against a mock | Yes, at the wire level only |
+| Run on a physical phone | **Yes** — sideloaded and working (2026-10-25) |
+| Tested against real Home Assistant | **Yes** — reported good by the owner |
+| Run on an emulator | No — system-image download kept failing |
+| Per-feature test record | **No** — "works" is an overall judgement |
+| Automated tests | **None** |
 
-Treat this as a **code-complete but unproven** build.
+Treat this as a **working build with no test coverage**. It behaves correctly
+in real use on one phone against one server; nothing is pinned down so it
+stays that way.
 
 ---
 
-## P0 — Run it
+## P0 — Lock in what currently works
 
-Nothing else matters until this is done. Every runtime path is unverified.
+The app runs correctly on a real phone, but **nothing protects that**. There
+are no tests, and no written record of which surfaces were exercised. The
+highest-value next step is making the behaviour hard to break:
 
-### Fastest route: a real phone
+- **Unit-test the pure functions first** — `HaEntity.fromCompact`,
+  `HaEntity.applyDiff`, `HaClient.normalizeBaseUrl`. They need no device, no
+  server and no Compose, and `applyDiff` in particular is where a silent
+  regression would be ugliest: a wrong diff shows stale state rather than
+  crashing. The iOS project keeps its equivalents `internal` specifically so
+  its tests can reach them — mirror that.
+- **Walk the surfaces once, deliberately**, and write down what you see:
+  connection chip reaching "Live", rooms matching your real area names (rather
+  than everything under `Other`), toggles round-tripping, camera frames
+  arriving, the climate sheet's modes and stepper.
+- **Add CI** — a GitHub Actions job running `assembleDebug` catches compile
+  regressions for free.
+
+### Installing a new build onto a phone
 
 ```bash
 adb install -r app/build/outputs/apk/debug/app-debug.apk
@@ -62,9 +81,11 @@ java tools/mock-ha/WsProbe.java         # protocol self-check
 The mock accepts **any non-empty token**. Good for exercising the UI before
 pointing at production.
 
-## P1 — Likely first bugs
+## P1 — Known fragilities
 
-Specific places to look when it misbehaves, rather than general suspicion:
+The app works today, so none of these are observed failures. They are the
+places where it is thin — worth looking at first when something does go wrong,
+and worth hardening before the code grows:
 
 1. **`subscribe_entities` subscription id.** `HaClient.afterAuth()` assumes the
    subscription's id matches `entitiesSubId`, captured from `nextId.get()`
@@ -156,10 +177,7 @@ Android that friction is much lower.
 
 ## P3 — Housekeeping
 
-- **No tests.** Not one. The pure functions are the obvious starting point:
-  `HaEntity.fromCompact`, `HaEntity.applyDiff`, `HaClient.normalizeBaseUrl`.
-  The iOS project has `ArkHomeTests/` and keeps its parsing helpers internal
-  specifically so they can be unit-tested — mirror that.
+- **Tests** — see P0; this is the main gap.
 - **Release signing.** Debug-signed only. A release build needs a keystore and
   a `signingConfigs` block; `isMinifyEnabled` is currently `false` for release,
   and `proguard-rules.pro` has only OkHttp's `-dontwarn` lines.

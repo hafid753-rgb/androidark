@@ -186,20 +186,33 @@ attribute diff all come back in the expected shapes.
 client was written against is correct, and that the mock is a faithful stand-in.
 It does **not** exercise a single line of the Kotlin or Compose code.
 
-### The app has never been run
+### Running it — eventually on real hardware
 
-This is the single most important caveat.
+The build finished well before it could be run, and for a while it shipped
+entirely unproven:
 
-- `./gradlew assembleDebug` succeeds; the APK is real and debug-signed.
+- `./gradlew assembleDebug` succeeded; the APK was real and debug-signed.
 - `adb devices` found no attached device.
 - An emulator was attempted: the **emulator package installed fine (1.0 GB)**,
   but the `android-35 google_apis x86_64` **system image download hung twice**
   via the `android` CLI — a live HTTPS connection, ~14s of CPU over hours, and
   zero bytes on disk. It was abandoned, not completed.
 
-So every runtime path — connect, auth, entity list, room grouping, toggles,
-camera snapshots, climate sheet — is **unverified**. Expect to shake out bugs
-on first contact with a real server.
+The repo was published in that state, with the caveat stated plainly.
+
+**It was then sideloaded onto a physical phone and run against the live Home
+Assistant server, and reported working (2026-10-25).** So the port holds up:
+the WebSocket auth handshake, `subscribe_entities` diffs, room resolution,
+service calls and camera proxy all behave against real Home Assistant, not
+just against the mock.
+
+What that still doesn't give us: a **per-feature record**. "It is good" is an
+overall judgement from real use, not a surface-by-surface sign-off, and there
+are no automated tests to pin the behaviour down. Nobody has written down
+whether, say, a non-admin account degrades to the flat `Other` list correctly,
+or how the climate stepper behaves against a slow thermostat. Those remain
+open questions rather than known failures — see
+[HANDOFF.md](HANDOFF.md) for the list.
 
 ## 10. What shipped
 

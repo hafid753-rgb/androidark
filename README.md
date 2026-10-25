@@ -98,14 +98,15 @@ From an emulator the host is `10.0.2.2`, so point the app at
 
 ## Status
 
-Compiles and packages cleanly; the APK is real and debug-signed.
+**Working.** Built, sideloaded onto a physical Android phone and run against
+the live Home Assistant server — reported good by the owner on 2026-10-25.
 
-It has **never been run** — not on a device, not on an emulator, not against a
-live Home Assistant server. `adb devices` found nothing attached, and the
-emulator system-image download hung twice (see
-[docs/HANDOFF.md](docs/HANDOFF.md)). The wire protocol is verified against the
-mock server above, but that exercises no Kotlin or Compose code.
+Caveats worth keeping in mind:
 
-Every runtime path — connect, auth, entity list, room grouping, toggles, camera
-snapshots, climate control — is unverified. Expect bugs on first contact with a
-real server.
+- There is **no per-feature test log**. "Works" is an overall judgement from
+  real use, not a surface-by-surface sign-off, and no automated tests exist
+  (see [docs/HANDOFF.md](docs/HANDOFF.md)).
+- It was never run on an emulator; the system-image download failed repeatedly.
+  Everything known about its behaviour comes from one real phone against one
+  real server.
+- The wire protocol is additionally verified against the mock server above.
