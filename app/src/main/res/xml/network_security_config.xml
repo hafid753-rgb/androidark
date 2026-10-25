@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Home Assistant is normally reached over plain HTTP on a LAN or Tailscale
+  address, so cleartext has to stay allowed - the same trade-off the iOS app
+  makes with NSAppTransportSecurity.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
