@@ -415,6 +415,14 @@ class HaClient(
                 .replace(Regex("^wss://", RegexOption.IGNORE_CASE), "https://")
                 .replace(Regex("^ws://", RegexOption.IGNORE_CASE), "http://")
 
+            // Lower-case the scheme. webSocketUrl() matches it with a
+            // case-sensitive startsWith, so "HTTPS://host" would otherwise
+            // yield no WebSocket URL at all and fail as "Invalid server URL".
+            val schemeSeparator = raw.indexOf("://")
+            if (schemeSeparator > 0) {
+                raw = raw.substring(0, schemeSeparator).lowercase() + raw.substring(schemeSeparator)
+            }
+
             // Drop any path, query or fragment - only the origin is wanted.
             val schemeEnd = raw.indexOf("://") + 3
             val authorityEnd = raw.indexOfFirst(schemeEnd) { it == '/' || it == '?' || it == '#' }

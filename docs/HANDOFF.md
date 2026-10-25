@@ -13,11 +13,11 @@ for context on decisions; this file is what to do next.
 | Tested against real Home Assistant | **Yes** — reported good by the owner |
 | Run on an emulator | No — system-image download kept failing |
 | Per-feature test record | **No** — "works" is an overall judgement |
-| Automated tests | **None** |
+| Automated tests | 27 unit tests on the parsing and URL layer; nothing above it |
 
-Treat this as a **working build with no test coverage**. It behaves correctly
-in real use on one phone against one server; nothing is pinned down so it
-stays that way.
+Treat this as a **working build with partial test coverage**. The pure
+functions are pinned down; everything stateful — the client lifecycle, the
+ViewModel, all Compose UI — is still covered only by "it ran fine on a phone".
 
 ---
 
@@ -27,12 +27,22 @@ The app runs correctly on a real phone, but **nothing protects that**. There
 are no tests, and no written record of which surfaces were exercised. The
 highest-value next step is making the behaviour hard to break:
 
-- **Unit-test the pure functions first** — `HaEntity.fromCompact`,
-  `HaEntity.applyDiff`, `HaClient.normalizeBaseUrl`. They need no device, no
-  server and no Compose, and `applyDiff` in particular is where a silent
-  regression would be ugliest: a wrong diff shows stale state rather than
-  crashing. The iOS project keeps its equivalents `internal` specifically so
-  its tests can reach them — mirror that.
+- ~~**Unit-test the pure functions**~~ — **done.** 27 tests in
+  `app/src/test/java/` cover `HaEntity.fromCompact`, `HaEntity.applyDiff` and
+  `HaClient.normalizeBaseUrl`. Run with `./gradlew testDebugUnitTest`.
+
+  They immediately earned their keep: `normalizeBaseUrl` did not lower-case
+  the scheme, while `webSocketUrl()` matches it with a case-sensitive
+  `startsWith("https://")`. A server URL typed as `HTTPS://…` produced no
+  WebSocket URL at all and failed as "Invalid server URL". Fixed.
+
+  Note the test dependency `org.json:json` — `android.jar`'s `org.json` is a
+  stub that throws "not mocked" in local unit tests, so the real
+  implementation has to shadow it on the test classpath.
+- **Next for tests:** nothing above the parsing layer is covered. `HaClient`'s
+  message dispatch is the most valuable target (feed `handleMessage` canned
+  server frames and assert on the entity map) but needs the socket plumbing
+  factored out first.
 - **Walk the surfaces once, deliberately**, and write down what you see:
   connection chip reaching "Live", rooms matching your real area names (rather
   than everything under `Other`), toggles round-tripping, camera frames

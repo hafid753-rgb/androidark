@@ -60,4 +60,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     debugImplementation("androidx.compose.ui:ui-tooling")
     implementation("androidx.compose.ui:ui-tooling-preview")
+
+    testImplementation("junit:junit:4.13.2")
+    // android.jar's org.json is a stub that throws "not mocked" in local unit
+    // tests; the real implementation on the test classpath shadows it.
+    testImplementation("org.json:json:20231013")
 }
